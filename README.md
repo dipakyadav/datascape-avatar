@@ -12,6 +12,6 @@ python
 #### TODO:
  - [x] Login/Logout with google.
  - [X] Store login details in sqlitedb,  To be changed later
- - [] Firebase implementation : TBD
+ - [ ] Firebase implementation : TBD
  - [x] Show/Hide edit menu on Login/Logout
- - [] Edit form
+ - [ ] Edit form
