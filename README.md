@@ -1,6 +1,7 @@
 1. Install Python3.7.
 2. From root directory run below commands.
-```python -m venv env
+```
+python -m venv env
 pip install -r requirements.txt
 ```
 3. Update client_id and client_secrete from google app in `app.py`.
