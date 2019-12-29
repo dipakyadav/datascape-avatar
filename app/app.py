@@ -1,8 +1,10 @@
 from flask import Flask
 from flask import render_template
+from flask import jsonify
+from flask_csv import send_csv
 import json
 import os
-import sqlite3
+# import sqlite3
 # Third-party libraries
 from flask import Flask, redirect, request, url_for
 from flask_login import (
@@ -14,17 +16,19 @@ from flask_login import (
 )
 from oauthlib.oauth2 import WebApplicationClient
 import requests
-
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 # Internal imports
-from db import init_db_command
+# from db import init_db_command
 from user import User
 
 # Configuration
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "{insert your google clientid here}")
-GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "{insert you google secret key here}")
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "{Insert client id}")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "Insert Client Secrete")
 GOOGLE_DISCOVERY_URL = (
     "https://accounts.google.com/.well-known/openid-configuration"
 )
+GOOGLE_SHEET_URL = "{Insert Google Sheet URI}"
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 
@@ -34,11 +38,11 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 # Naive database setup
-try:
-    init_db_command()
-except sqlite3.OperationalError:
+# try:
+#     init_db_command()
+# except sqlite3.OperationalError:
     # Assume it's already been created
-    pass
+#     pass
 
 # OAuth 2 client setup
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
@@ -46,10 +50,38 @@ client = WebApplicationClient(GOOGLE_CLIENT_ID)
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
+def get_worksheet():
+    scope = ['https://spreadsheets.google.com/feeds',
+         'https://www.googleapis.com/auth/drive']
+
+    credentials = ServiceAccountCredentials.from_json_keyfile_name('datascrape-avatar-1dbdae227339.json', scope)
+
+    gc = gspread.authorize(credentials)
+
+    wks = gc.open_by_url(GOOGLE_SHEET_URL)
+    return wks
+
+def get_toycsvsheet():
+    wks = get_worksheet()
+    sh = wks.get_worksheet(1)
+    return sh
+
+def get_user_sheet():
+    wks = get_worksheet()
+    sh = wks.get_worksheet(0)
+    return sh
+
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(user_id)
+    sh = get_user_sheet()
+    ids_list = sh.col_values(1)
+    i = ids_list.index(user_id)
+    row = sh.row_values(i+1)
+    return User(
+        id_=user_id, name=row[1], email=row[2], profile_pic=row[3]
+    )
+    # return User.get(user_id)
 
 @app.route("/")
 def home():
@@ -58,6 +90,15 @@ def home():
 @app.route("/index")
 def index():
     return render_template('index.html')
+
+@app.route("/toycsv")
+def toycsv():
+    sh = get_toycsvsheet()
+    all_records = sh.get_all_records()
+    csv_columns = ["Account Name","Website","Industries Trade","Industries Other","Products Self Reported","HS Code","Keywords","Billing Zip/Postal Code"]
+    return send_csv(all_records, "toy.csv", csv_columns)
+
+
 
 @app.route("/login")
 def login():
@@ -125,8 +166,14 @@ def callback():
     )
 
     # Doesn't exist? Add it to the database.
-    if not User.get(unique_id):
-        User.create(unique_id, users_name, users_email, picture)
+    # if not User.get(unique_id):
+    #     User.create(unique_id, users_name, users_email, picture)
+    # TODO: Add user to the Google Sheet database.
+    sh = get_user_sheet()
+    # sh = wks.worksheet("User")
+    ids_list = sh.col_values(1)
+    if not unique_id in ids_list:
+        sh.append_row([unique_id, users_name, users_email, picture])
 
     # Begin user session by logging the user in
     login_user(user)

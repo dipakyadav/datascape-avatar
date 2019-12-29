@@ -299,7 +299,8 @@ var layerControl = false;
 var dataSet = []; // This will be eliminated
 function loadHtmlTable(applyFilter) {
 	//var csvdata = "data/locations-final-cleaned.csv";
-	var csvdata = "static/data/toy.csv";
+	// var csvdata = "static/data/toy.csv";
+	var csvdata = "toycsv";
 	//d3.text("exporters/export.csv", function(data) {
 	d3.text(csvdata).then(function(data) {
       //dataSet = d3.csv.parseRows(data);
