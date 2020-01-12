@@ -2,9 +2,7 @@
 2. From root directory run below commands.
 ```
 python3 -m venv env
-source ./env/bin/activate
 pip install -r requirements.txt
-pip install -U pip
 ```
 3. Update client_id and client_secrete from google app in `app.py`.
 4. Run/Server python app.
