@@ -1,3 +1,9 @@
+View online at [model.earth/crowdsource/](https://model.earth/crowdsource/)  
+
+Latest setup notes reside at [github.com/modelearth/crowdsource](https://github.com/modelearth/crowdsource)  
+
+### Old Setup Notes
+
 1. Install Python3.7.
 2. From root directory run below commands.
 ```
